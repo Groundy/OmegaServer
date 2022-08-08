@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 enum ReturnCode{
 	OK(200),
 	BadRequest(400),
+	CodeExpired(501),
+	CodeNotExist(502),
 	ServerError(500);
 
 	private int code;
@@ -30,81 +32,61 @@ public class Controller {
 	}
 
 	@PostMapping("/getCode")
-	public ResponseEntity<String> getCode(@RequestBody String requestJsonBody){
-		return getCodeBody(requestJsonBody);
+	public ResponseEntity<String> getCodeData(@RequestBody String requestJsonBody){
+		return getCodeDataBody(requestJsonBody);
+	}
+
+	@PostMapping("/test")
+	public ResponseEntity<String> getInfo(){
+		return getInfoBody();
 	}
 
 
-
 	ResponseEntity<String> setCodeBody(String requestJsonBody){
-		var errorStr = Parsers.setCodeRequestParsingErrorStr(requestJsonBody);
-		if(errorStr != null){
-			String badJsonStr = Parsers.setCodeResultFail(errorStr).toString();
-			int retCode = ReturnCode.BadRequest.code();
-			ResponseEntity<String> response = ResponseEntity.status(retCode).body(badJsonStr);
-			return response;
+		ReturnCode returnCode = Parsers.setCodeRequestParsingErrorStr(requestJsonBody);
+		if(returnCode != ReturnCode.OK){
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.BadRequest).toString();
+			return ResponseEntity.status(ReturnCode.BadRequest.code()).body(badJsonStr);
 		}
 
 		int code = dataService.addRecord(requestJsonBody);
 		if(code == -1){
-			String badJsonStr = Parsers.setCodeResultFail("Good request but still error").toString();
-			int retCode = ReturnCode.ServerError.code();
-			ResponseEntity<String> response = ResponseEntity.status(retCode).body(badJsonStr);
-			return response;
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.ServerError).toString();
+			return ResponseEntity.status(ReturnCode.ServerError.code()).body(badJsonStr);
 		}
-
 
 		String okJsonStr = Parsers.setCodeResultOk(code).toString();
 		return ResponseEntity.ok(okJsonStr);
 	}
-	ResponseEntity<String> getCodeBody(String requestJsonBody){
-		String errorStr = Parsers.getCodeParsingRequestErrorStr(requestJsonBody);
-		if(errorStr != null){
-			String badJsonStr = Parsers.getCodeResultFailed(errorStr).toString();
-			ResponseEntity<String> response = ResponseEntity.badRequest().body(badJsonStr);
-			return response;
+	ResponseEntity<String> getCodeDataBody(String requestJsonBody){
+		Integer requestCode = Parsers.getCodeFromRequest(requestJsonBody);
+		if(requestCode == null){
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.BadRequest).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
 		}
-		int requestCode = Parsers.getCodeParsingOK(requestJsonBody);
 
-		errorStr = dataService.getDataFromCodeErrorStr(requestCode);
-		if(errorStr != null){
-			String badJsonStr = Parsers.getCodeResultFailed(errorStr).toString();
-			ResponseEntity<String> response = ResponseEntity.badRequest().body(badJsonStr);
-			return response;
+		ReturnCode responseCode = dataService.getDataFromCodeErrorStr(requestCode);
+		if(responseCode != ReturnCode.OK){
+			String badJsonStr = Parsers.getFailureResponse(responseCode).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
 		}
 
 		JSONObject data = dataService.getResponseFromCode(requestCode);
 		if(data==null){
-			String badJsonStr = Parsers.getCodeResultFailed("Good request but still error").toString();
-			ResponseEntity<String> response = ResponseEntity.badRequest().body(badJsonStr);
-			return response;
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.ServerError).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
 		}
 
-		String strToRet = dataService.getResponseFromCode(requestCode).toString();
-		return ResponseEntity.ok(strToRet);
+		JSONObject responseJson = dataService.getResponseFromCode(requestCode);
+		if(responseJson == null){
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.ServerError).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
+		}
+		return ResponseEntity.ok(responseJson.toString());
 	}
-
-
-
-
-
-
-
-
-
-
-
-/*
-	@PostMapping("/codeUsed")
-	public String a3(){
-		//todo
-		return "";
-	}
-	*/
-
-	@PostMapping("/test")
-	public ResponseEntity<String> a3(){
+	ResponseEntity<String> getInfoBody(){
 		String info = dataService.getListStatus();
 		return ResponseEntity.ok(info);
 	}
+
 }

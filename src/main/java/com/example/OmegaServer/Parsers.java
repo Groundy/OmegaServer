@@ -3,7 +3,7 @@ package com.example.OmegaServer;
 import org.json.JSONObject;
 
 public class Parsers {
-	enum SetRequestFields {
+	enum RequestFields {
 	//SenderAccNumber("senderAccNumber"),
 	//SenderAccName("senderAccName"),
 	ReceiverAccNumber("receiverAccNumber"),
@@ -11,28 +11,30 @@ public class Parsers {
 	Description("description"),
 	Amount("amount"),
 	Currency("currency"),
-	ExecutionDate("executionDate");
+	ExecutionDate("executionDate"),
+
+	Data("data");
 
 	private String fieldName;
-	SetRequestFields(String fieldName) {
+	RequestFields(String fieldName) {
 		this.fieldName = fieldName;
 	}
 	public String text() {
 		return fieldName;
 	}
 }
-	enum Fields{
+	enum ResponseFields {
 		Code("code"),
-		Status("Status"),
+		Status("status"),
 		Ok("ok"),
 		Failed("failed"),
 		ErrorMsg("errorMsg"),
 		ExpirationTime("expirationTime"),
-		TransferData("transferData"),
-		Data("data");
+		TransferData("transferData");
+
 
 		private String fieldName;
-		Fields(String fieldName) {
+		ResponseFields(String fieldName) {
 			this.fieldName = fieldName;
 		}
 		public String text() {
@@ -40,59 +42,54 @@ public class Parsers {
 		}
 	}
 
-	static String setCodeRequestParsingErrorStr(String input){
+	static ReturnCode setCodeRequestParsingErrorStr(String input){
 		try {
-			JSONObject obj = new JSONObject(input).getJSONObject(Fields.Data.text());
-			obj.getString(SetRequestFields.ReceiverName.text());
-			obj.getString(SetRequestFields.ReceiverAccNumber.text());
-			obj.getString(SetRequestFields.ReceiverName.text());
-			obj.getString(SetRequestFields.Description.text());
-			obj.getDouble(SetRequestFields.Amount.text());
-			obj.getString(SetRequestFields.Currency.text());
-			obj.getString(SetRequestFields.ExecutionDate.text());
+			JSONObject obj = new JSONObject(input).getJSONObject(RequestFields.Data.text());
+			obj.getString(RequestFields.ReceiverName.text());
+			obj.getString(RequestFields.ReceiverAccNumber.text());
+			obj.getString(RequestFields.ReceiverName.text());
+			obj.getString(RequestFields.Description.text());
+			obj.getDouble(RequestFields.Amount.text());
+			obj.getString(RequestFields.Currency.text());
+			//obj.getString(SetRequestFields.ExecutionDate.text());
+			return ReturnCode.OK;
 		}catch (Exception e){
-			return e.toString();
+			return ReturnCode.BadRequest;
 		}
-		return null;
 	}
-	static String getCodeParsingRequestErrorStr(String input){
+	static Integer getCodeFromRequest(String input){
 		try {
-			int code = new JSONObject(input).getInt(Fields.Code.text());
+			int code = new JSONObject(input).getInt(ResponseFields.Code.text());
+			return code;
+		}catch (Exception e){
 			return null;
-		}catch (Exception e){
-			return e.toString();
 		}
 	}
-	static int getCodeParsingOK(String input){
-		return new JSONObject(input).getInt(Fields.Code.text());
-	}
-
 	static JSONObject setCodeResultOk(int code){
 		JSONObject toRet = new JSONObject();
-		toRet.put(Fields.Status.text(), Fields.Ok.text());
-		toRet.put(Fields.Code.text(), String.valueOf(code));
+		toRet.put(ResponseFields.Status.text(), ResponseFields.Ok.text());
+		toRet.put(ResponseFields.Code.text(), String.valueOf(code));
 		return toRet;
 	}
-	static JSONObject setCodeResultFail(String errorCode){
+	static JSONObject getFailureResponse(ReturnCode code){
 		JSONObject toRet = new JSONObject();
-		toRet.put(Fields.Status.text(), Fields.Failed.text());
-		toRet.put(Fields.ErrorMsg.text(), errorCode);
-		return toRet;
-	}
-
-	static JSONObject getCodeResultOk(JSONObject data){
-		try {
-			JSONObject toRet = new JSONObject(data);
-			toRet.put(Fields.Status.text(), Fields.Ok.text());
-			return toRet;
-		}catch (Exception e){
-			return getCodeResultFailed(e.toString());
+		String msg = "";
+		switch (code){
+			case CodeExpired:{
+				msg = "Taki kod nie istnieje w systemie.";
+			}
+			case CodeNotExist:{
+				msg = "Ten kod wygasł.";
+			}
+			case ServerError:{
+				msg = "Błąd serwera.";
+			}
+			case BadRequest:{
+				msg = "Błędne żądanie.";
+			}
 		}
-	}
-	static JSONObject getCodeResultFailed(String errorMsg){
-		JSONObject toRet = new JSONObject();
-		toRet.put(Fields.Status.text(), Fields.Failed.text());
-		toRet.put(Fields.ErrorMsg.text(), errorMsg);
+		toRet.put(ResponseFields.Status.text(), ResponseFields.Failed.text());
+		toRet.put(ResponseFields.ErrorMsg.text(), msg);
 		return toRet;
 	}
 }

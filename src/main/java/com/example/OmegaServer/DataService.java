@@ -4,7 +4,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 public class DataService {
+	DataService(){
+		startCleaningExecutor();
+	}
 	Map<Integer, Record> list = new TreeMap();
 
 	public int addRecord (String jsonObjectStr){
@@ -17,7 +24,7 @@ public class DataService {
 
 			Record toAdd = new Record();
 			toAdd.expirationTimeStamp = ServerLogic.getFutureTimeStamp(5);
-			toAdd.jsonDataStr = jsonObjectStr;
+			toAdd.jsonDataStr = new JSONObject(jsonObjectStr).getJSONObject(Parsers.RequestFields.Data.text()).toString();
 			list.put(tmpCode, toAdd);
 			System.out.println("Successes to add new Record");
 			return tmpCode;
@@ -45,11 +52,17 @@ public class DataService {
 		}
 
 	}
-	void deleteAllExpiredCodes(){
+	private void startCleaningExecutor(){
+		ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+		executor.scheduleAtFixedRate( () -> {
+			deleteAllExpiredCodes();
+		}, 5, 15, TimeUnit.MINUTES);
+	}
+	private void deleteAllExpiredCodes(){
 		ArrayList<Integer> codesToDelete = new ArrayList<>();
 
 		for(var entry : list.entrySet()){
-			if(!entry.getValue().isStillValid())
+			if(entry.getValue().alreadyExpired())
 				codesToDelete.add(entry.getKey());
 		}
 		if(codesToDelete.size() == 0){
@@ -63,6 +76,7 @@ public class DataService {
 		}
 		System.out.println("Cleared " + codesToDelete.size() + " records");
 	}
+
 	String getListStatus() {
 		JSONObject toRet = new JSONObject();
 		String header = "Database size: " + list.size();
@@ -71,31 +85,31 @@ public class DataService {
 		JSONArray arr = new JSONArray();
 		for(var entry : list.entrySet()){
 			JSONObject toAdd = new JSONObject();
-			toAdd.put(Parsers.Fields.Code.text(), entry.getKey().toString());
-			toAdd.put(Parsers.Fields.ExpirationTime.text(),  entry.getValue().expirationTimeStamp);
+			toAdd.put(Parsers.ResponseFields.Code.text(), entry.getKey().toString());
+			toAdd.put(Parsers.ResponseFields.ExpirationTime.text(),  entry.getValue().expirationTimeStamp);
 			arr.put(toAdd);
 		}
 		toRet.put("array", arr);
 
 		return toRet.toString();
 	}
-
-	String getDataFromCodeErrorStr(int code){
+	ReturnCode getDataFromCodeErrorStr(int code){
 		if(!list.containsKey(code))
-			return "There's not such code!";
+			return ReturnCode.CodeNotExist;
 
 		var record = list.get(code);
-		if(!record.isStillValid())
-			return "That code expired!";
+		if(record.alreadyExpired())
+			return ReturnCode.CodeExpired;
 
-		return null;
+		return ReturnCode.OK;
 	}
 	JSONObject getResponseFromCode(int code){
 		try {
 			Record record = list.get(code);
 			JSONObject toRet = new JSONObject();
-			toRet.put("expirationTime" , record.expirationTimeStamp);
-			toRet.put("transferData", record.jsonDataStr);
+			toRet.put(Parsers.ResponseFields.Status.text(), Parsers.ResponseFields.Ok.text());
+			toRet.put(Parsers.ResponseFields.ExpirationTime.text() , record.expirationTimeStamp);
+			toRet.put(Parsers.ResponseFields.TransferData.text() , record.jsonDataStr);
 			return toRet;
 		}catch (Exception e){
 			return null;

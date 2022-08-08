@@ -7,10 +7,10 @@ public class Record {
 	String expirationTimeStamp;
 
 	public Record(){}
-	public boolean isStillValid(){
+	public boolean alreadyExpired(){
 		int secondsMargin = 8;
-		Long timestampTime = Instant.parse(expirationTimeStamp).getEpochSecond();
-		Long currentTime =  Instant.now().getEpochSecond() + secondsMargin;
-		return timestampTime > currentTime;
+		long timestampTime = Instant.parse(expirationTimeStamp).getEpochSecond();
+		long currentTime =  Instant.now().getEpochSecond() + secondsMargin;
+		return timestampTime <= currentTime;
 	}
 }
