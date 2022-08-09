@@ -93,7 +93,7 @@ public class DataService {
 
 		return toRet.toString();
 	}
-	ReturnCode getDataFromCodeErrorStr(int code){
+	ReturnCode getDataFromCode(int code){
 		if(!list.containsKey(code))
 			return ReturnCode.CodeNotExist;
 

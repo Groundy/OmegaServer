@@ -65,7 +65,7 @@ public class Controller {
 			return ResponseEntity.badRequest().body(badJsonStr);
 		}
 
-		ReturnCode responseCode = dataService.getDataFromCodeErrorStr(requestCode);
+		ReturnCode responseCode = dataService.getDataFromCode(requestCode);
 		if(responseCode != ReturnCode.OK){
 			String badJsonStr = Parsers.getFailureResponse(responseCode).toString();
 			return ResponseEntity.badRequest().body(badJsonStr);

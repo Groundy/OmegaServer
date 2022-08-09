@@ -75,17 +75,21 @@ public class Parsers {
 		JSONObject toRet = new JSONObject();
 		String msg = "";
 		switch (code){
-			case CodeExpired:{
-				msg = "Taki kod nie istnieje w systemie.";
-			}
 			case CodeNotExist:{
+				msg = "Taki kod nie istnieje w systemie.";
+				break;
+			}
+			case CodeExpired:{
 				msg = "Ten kod wygasł.";
+				break;
 			}
 			case ServerError:{
 				msg = "Błąd serwera.";
+				break;
 			}
 			case BadRequest:{
 				msg = "Błędne żądanie.";
+				break;
 			}
 		}
 		toRet.put(ResponseFields.Status.text(), ResponseFields.Failed.text());
