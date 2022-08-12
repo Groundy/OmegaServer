@@ -55,7 +55,8 @@ public class Controller {
 			return ResponseEntity.status(ReturnCode.ServerError.code()).body(badJsonStr);
 		}
 
-		String okJsonStr = Parsers.setCodeResultOk(code).toString();
+		String expirationTimeStr = dataService.getExpirationTimeFromRecord(code);
+		String okJsonStr = Parsers.setCodeResultOk(code, expirationTimeStr).toString();
 		return ResponseEntity.ok(okJsonStr);
 	}
 	ResponseEntity<String> getCodeDataBody(String requestJsonBody){

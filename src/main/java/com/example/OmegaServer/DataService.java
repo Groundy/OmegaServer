@@ -77,6 +77,9 @@ public class DataService {
 		System.out.println("Cleared " + codesToDelete.size() + " records");
 	}
 
+	String getExpirationTimeFromRecord(int code){
+		return list.get(code).expirationTimeStamp;
+	}
 	String getListStatus() {
 		JSONObject toRet = new JSONObject();
 		String header = "Database size: " + list.size();

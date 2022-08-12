@@ -65,10 +65,11 @@ public class Parsers {
 			return null;
 		}
 	}
-	static JSONObject setCodeResultOk(int code){
+	static JSONObject setCodeResultOk(int code, String expirationTime){
 		JSONObject toRet = new JSONObject();
 		toRet.put(ResponseFields.Status.text(), ResponseFields.Ok.text());
 		toRet.put(ResponseFields.Code.text(), String.valueOf(code));
+		toRet.put(ResponseFields.ExpirationTime.text(), expirationTime);
 		return toRet;
 	}
 	static JSONObject getFailureResponse(ReturnCode code){
