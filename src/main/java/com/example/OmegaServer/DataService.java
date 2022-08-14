@@ -9,28 +9,30 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class DataService {
+	int minutesThatCodeWillBeValid = 10;
+
 	DataService(){
 		startCleaningExecutor();
 	}
 	Map<Integer, Record> list = new TreeMap();
 
-	public int addRecord (String jsonObjectStr){
+	public Integer addRecord (String jsonObjectStr){
 		try {
 			int tmpCode = getCodeThatDoesNotExistInDBYet();
 			if(tmpCode == -1){
 				System.out.println("Failed to add new Record");
-				return -1;
+				return null;
 			}
 
 			Record toAdd = new Record();
-			toAdd.expirationTimeStamp = ServerLogic.getFutureTimeStamp(5);
+			toAdd.expirationTimeStamp = ServerLogic.getFutureTimeStamp(minutesThatCodeWillBeValid);
 			toAdd.jsonDataStr = new JSONObject(jsonObjectStr).getJSONObject(Parsers.RequestFields.Data.text()).toString();
 			list.put(tmpCode, toAdd);
 			System.out.println("Successes to add new Record");
 			return tmpCode;
 		}catch (Exception e){
 			System.out.println("Failed to add new Record");
-			return -1;
+			return null;
 		}
 	}
 	private int getCodeThatDoesNotExistInDBYet(){
@@ -43,14 +45,16 @@ public class DataService {
 		}
 		return -1;
 	}
-	private void deleteCode(int code){
+	private Boolean deleteCode(int code){
 		try {
-			if(list.containsKey(code))
+			if(list.containsKey(code)){
 				list.remove(code);
+				return true;
+			}
+			return false;
 		}catch (Exception e){
-			;
+			return false;
 		}
-
 	}
 	private void startCleaningExecutor(){
 		ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -76,6 +80,21 @@ public class DataService {
 		}
 		System.out.println("Cleared " + codesToDelete.size() + " records");
 	}
+	boolean markRecordAsDone(int code){
+		Record record = list.get(code);
+		if(record == null)
+			return false;
+
+		if(record.done)
+			return false;
+
+		record.done = true;
+		return true;
+	}
+	Record getRecordByCode(int code){
+		Record record = list.get(code);
+		return record;
+	}
 
 	String getExpirationTimeFromRecord(int code){
 		return list.get(code).expirationTimeStamp;
@@ -90,6 +109,7 @@ public class DataService {
 			JSONObject toAdd = new JSONObject();
 			toAdd.put(Parsers.ResponseFields.Code.text(), entry.getKey().toString());
 			toAdd.put(Parsers.ResponseFields.ExpirationTime.text(),  entry.getValue().expirationTimeStamp);
+			toAdd.put(Parsers.ResponseFields.IsDone.text(),  entry.getValue().done);
 			arr.put(toAdd);
 		}
 		toRet.put("array", arr);

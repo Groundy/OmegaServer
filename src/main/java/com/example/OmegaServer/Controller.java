@@ -10,6 +10,7 @@ enum ReturnCode{
 	BadRequest(400),
 	CodeExpired(501),
 	CodeNotExist(502),
+	CodeAlreadyDone(503),
 	ServerError(500);
 
 	private int code;
@@ -41,6 +42,17 @@ public class Controller {
 		return getInfoBody();
 	}
 
+	@PostMapping("/waitCodeDone")
+	public ResponseEntity<String> waitCodeDone(@RequestBody String requestJsonBody) throws InterruptedException {
+		return waitCodeDoneBody(requestJsonBody);
+	}
+
+	@PostMapping("/codeDone")
+	public ResponseEntity<String> codeDone(@RequestBody String requestJsonBody){
+		return codeDoneBody(requestJsonBody);
+	}
+
+
 
 	ResponseEntity<String> setCodeBody(String requestJsonBody){
 		ReturnCode returnCode = Parsers.setCodeRequestParsingErrorStr(requestJsonBody);
@@ -49,8 +61,8 @@ public class Controller {
 			return ResponseEntity.status(ReturnCode.BadRequest.code()).body(badJsonStr);
 		}
 
-		int code = dataService.addRecord(requestJsonBody);
-		if(code == -1){
+		Integer code = dataService.addRecord(requestJsonBody);
+		if(code == null){
 			String badJsonStr = Parsers.getFailureResponse(ReturnCode.ServerError).toString();
 			return ResponseEntity.status(ReturnCode.ServerError.code()).body(badJsonStr);
 		}
@@ -90,4 +102,44 @@ public class Controller {
 		return ResponseEntity.ok(info);
 	}
 
+
+
+
+	ResponseEntity<String> codeDoneBody(String requestJsonBody){
+		Integer requestCode = Parsers.getCodeFromCodeDoneRequest(requestJsonBody);
+		if(requestCode == null){
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.BadRequest).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
+		}
+		dataService.markRecordAsDone(requestCode);
+
+		JSONObject response = new JSONObject();
+		response.put(Parsers.ResponseFields.Status.text(), Parsers.ResponseFields.Ok.text());
+		return ResponseEntity.ok(response.toString());
+	}
+	ResponseEntity<String> waitCodeDoneBody(String requestJsonBody) throws InterruptedException {
+		Integer requestCode = Parsers.getCodeFromCodeDoneRequest(requestJsonBody);
+		if(requestCode == null){
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.CodeAlreadyDone).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
+		}
+
+		Record record = dataService.getRecordByCode(requestCode);
+		if(record.done){
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.CodeAlreadyDone).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
+		}
+
+		while (record.getSecondsToExpiration() > 0){
+			if(record.done) {
+				JSONObject responseOk = new JSONObject();
+				responseOk.put(Parsers.ResponseFields.Status.text(), Parsers.ResponseFields.Ok.text());
+				return ResponseEntity.ok(responseOk.toString());
+			}
+			else
+				Thread.sleep(2000);
+		}
+		String badJsonStr = Parsers.getFailureResponse(ReturnCode.CodeExpired).toString();
+		return ResponseEntity.badRequest().body(badJsonStr);
+	}
 }

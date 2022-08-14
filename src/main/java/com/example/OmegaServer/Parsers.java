@@ -1,5 +1,6 @@
 package com.example.OmegaServer;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Parsers {
@@ -30,7 +31,8 @@ public class Parsers {
 		Failed("failed"),
 		ErrorMsg("errorMsg"),
 		ExpirationTime("expirationTime"),
-		TransferData("transferData");
+		TransferData("transferData"),
+		IsDone("isDone");
 
 
 		private String fieldName;
@@ -92,9 +94,24 @@ public class Parsers {
 				msg = "Błędne żądanie.";
 				break;
 			}
+			case CodeAlreadyDone:{
+				msg = "Kod został już wykorzystany.";
+				break;
+			}
 		}
 		toRet.put(ResponseFields.Status.text(), ResponseFields.Failed.text());
 		toRet.put(ResponseFields.ErrorMsg.text(), msg);
 		return toRet;
+	}
+
+	static Integer getCodeFromCodeDoneRequest(String inputJsonStr){
+		Integer requestCode = null;
+		try{
+			JSONObject inputJson = new JSONObject(inputJsonStr);
+			requestCode = inputJson.getInt(ResponseFields.Code.text());
+		} catch (JSONException e) {
+
+		}
+		return requestCode;
 	}
 }
