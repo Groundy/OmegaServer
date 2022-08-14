@@ -124,6 +124,9 @@ public class DataService {
 		if(record.alreadyExpired())
 			return ReturnCode.CodeExpired;
 
+		if(record.done)
+			return ReturnCode.CodeUsed;
+
 		return ReturnCode.OK;
 	}
 	JSONObject getResponseFromCode(int code){

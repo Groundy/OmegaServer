@@ -86,6 +86,10 @@ public class Parsers {
 				msg = "Ten kod wygasł.";
 				break;
 			}
+			case CodeUsed:{
+				msg = "Ten kod został już wykorzystany.";
+				break;
+			}
 			case ServerError:{
 				msg = "Błąd serwera.";
 				break;

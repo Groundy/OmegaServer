@@ -8,10 +8,12 @@ import org.springframework.web.bind.annotation.*;
 enum ReturnCode{
 	OK(200),
 	BadRequest(400),
+
+	ServerError(500),
 	CodeExpired(501),
 	CodeNotExist(502),
 	CodeAlreadyDone(503),
-	ServerError(500);
+	CodeUsed(504);
 
 	private int code;
 	ReturnCode(int code) {
@@ -101,10 +103,6 @@ public class Controller {
 		String info = dataService.getListStatus();
 		return ResponseEntity.ok(info);
 	}
-
-
-
-
 	ResponseEntity<String> codeDoneBody(String requestJsonBody){
 		Integer requestCode = Parsers.getCodeFromCodeDoneRequest(requestJsonBody);
 		if(requestCode == null){
