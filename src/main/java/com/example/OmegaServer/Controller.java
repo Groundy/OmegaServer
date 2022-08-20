@@ -13,7 +13,8 @@ enum ReturnCode{
 	CodeExpired(501),
 	CodeNotExist(502),
 	CodeAlreadyDone(503),
-	CodeUsed(504);
+	CodeUsed(504),
+	CodeMultipleUse(505);
 
 	private int code;
 	ReturnCode(int code) {
@@ -109,10 +110,11 @@ public class Controller {
 			String badJsonStr = Parsers.getFailureResponse(ReturnCode.BadRequest).toString();
 			return ResponseEntity.badRequest().body(badJsonStr);
 		}
-		dataService.markRecordAsDone(requestCode);
 
+		dataService.markRecordAsDone(requestCode);
 		JSONObject response = new JSONObject();
 		response.put(Parsers.ResponseFields.Status.text(), Parsers.ResponseFields.Ok.text());
+
 		return ResponseEntity.ok(response.toString());
 	}
 	ResponseEntity<String> waitCodeDoneBody(String requestJsonBody) throws InterruptedException {
@@ -123,13 +125,17 @@ public class Controller {
 		}
 
 		Record record = dataService.getRecordByCode(requestCode);
-		if(record.done){
+		if(record.used){
 			String badJsonStr = Parsers.getFailureResponse(ReturnCode.CodeAlreadyDone).toString();
+			return ResponseEntity.badRequest().body(badJsonStr);
+		}
+		if(record.multipleUse){
+			String badJsonStr = Parsers.getFailureResponse(ReturnCode.CodeMultipleUse).toString();
 			return ResponseEntity.badRequest().body(badJsonStr);
 		}
 
 		while (record.getSecondsToExpiration() > 0){
-			if(record.done) {
+			if(record.used) {
 				JSONObject responseOk = new JSONObject();
 				responseOk.put(Parsers.ResponseFields.Status.text(), Parsers.ResponseFields.Ok.text());
 				return ResponseEntity.ok(responseOk.toString());

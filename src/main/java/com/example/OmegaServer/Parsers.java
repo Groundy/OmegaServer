@@ -14,7 +14,9 @@ public class Parsers {
 	Currency("currency"),
 	ExecutionDate("executionDate"),
 
-	Data("data");
+	Data("data"),
+	MultipleUseField("multipleUse"),
+	ProLongedExpTime("proLongedExpTime");
 
 	private String fieldName;
 	RequestFields(String fieldName) {
@@ -53,7 +55,6 @@ public class Parsers {
 			obj.getString(RequestFields.Description.text());
 			obj.getDouble(RequestFields.Amount.text());
 			obj.getString(RequestFields.Currency.text());
-			//obj.getString(SetRequestFields.ExecutionDate.text());
 			return ReturnCode.OK;
 		}catch (Exception e){
 			return ReturnCode.BadRequest;
@@ -100,6 +101,10 @@ public class Parsers {
 			}
 			case CodeAlreadyDone:{
 				msg = "Kod został już wykorzystany.";
+				break;
+			}
+			case CodeMultipleUse:{
+				msg = "Kod jest wielokrotnego użytku.";
 				break;
 			}
 		}
