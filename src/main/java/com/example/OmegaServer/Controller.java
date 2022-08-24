@@ -40,7 +40,7 @@ public class Controller {
 		return getCodeDataBody(requestJsonBody);
 	}
 
-	@PostMapping("/test")
+	@PostMapping("/getInfo")
 	public ResponseEntity<String> getInfo(){
 		return getInfoBody();
 	}

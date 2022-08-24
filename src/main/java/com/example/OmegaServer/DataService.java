@@ -2,11 +2,11 @@ package com.example.OmegaServer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.lang.instrument.Instrumentation;
 
 public class DataService {
 	private final Map<Integer, Record> list = new TreeMap<>();
@@ -112,6 +112,8 @@ public class DataService {
 			JSONObject toAdd = new JSONObject();
 			toAdd.put(Parsers.ResponseFields.Code.text(), entry.getKey().toString());
 			toAdd.put(Parsers.ResponseFields.ExpirationTime.text(),  entry.getValue().expirationTimeStamp);
+			int sizeOfRecordEntry = (entry.getValue().jsonDataStr.length() + entry.getValue().expirationTimeStamp.length())*2 + 8 + 2 + 4;
+			toAdd.put(Parsers.ResponseFields.Size.text(),  sizeOfRecordEntry);
 			toAdd.put(Parsers.ResponseFields.IsDone.text(),  entry.getValue().used);
 			arr.put(toAdd);
 		}

@@ -33,6 +33,7 @@ public class Parsers {
 		Failed("failed"),
 		ErrorMsg("errorMsg"),
 		ExpirationTime("expirationTime"),
+		Size("size"),
 		TransferData("transferData"),
 		IsDone("isDone");
 
